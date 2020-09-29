@@ -44,6 +44,10 @@ Options:
 
 ## Changelog:
 
+1.1.1:
+
+- fix: annotation propertie warning 
+
 1.1.0:
 
 - feat: offset from active option

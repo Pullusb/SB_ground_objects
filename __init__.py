@@ -19,7 +19,7 @@ bl_info = {
 "name": "Ground objects",
 "description": "Ground selected objects (Using lowest point of bounding box)",
 "author": "Samuel Bernou",
-"version": (1, 1, 0),
+"version": (1, 1, 1),
 "blender": (2, 83, 0),
 "location": "Sidebar > Tool > Ground object",
 "warning": "",
@@ -91,7 +91,7 @@ class MESH_OT_center_on_axis(bpy.types.Operator):
         name="Individually", description="", default=False)
 
 
-    axis = bpy.props.IntProperty(default=0)
+    axis : bpy.props.IntProperty(default=0)
 
         #(key, label, descr, id[, icon])
     def to_center(self, o, axis=1):
