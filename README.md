@@ -44,9 +44,13 @@ Options:
 
 ## Changelog:
 
+1.1.2:
+
+- added doc url
+
 1.1.1:
 
-- fix: annotation propertie warning 
+- fix: annotation property warning 
 
 1.1.0:
 

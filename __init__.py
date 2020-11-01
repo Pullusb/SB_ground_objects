@@ -19,11 +19,11 @@ bl_info = {
 "name": "Ground objects",
 "description": "Ground selected objects (Using lowest point of bounding box)",
 "author": "Samuel Bernou",
-"version": (1, 1, 1),
+"version": (1, 1, 2),
 "blender": (2, 83, 0),
 "location": "Sidebar > Tool > Ground object",
 "warning": "",
-"doc_url": "",#2.8 > 2.82 : "wiki_url":"",
+"doc_url": "https://github.com/Pullusb/SB_ground_objects",
 "category": "3D View",
 }
 
