@@ -44,20 +44,24 @@ Options:
 
 ## Changelog:
 
-1.1.2:
+1.2.0
 
-- added doc url
+- added: use 3d cursor as reference point instead of world center (true by default)
 
-1.1.1:
+1.1.2
+
+- added: doc url
+
+1.1.1
 
 - fix: annotation property warning 
 
-1.1.0:
+1.1.0
 
 - feat: offset from active option
 - feat: center (world) on specific axis
 - new UI
 
-1.0.0:
+1.0.0
 
 - V1

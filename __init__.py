@@ -19,7 +19,7 @@ bl_info = {
 "name": "Ground objects",
 "description": "Ground selected objects (Using lowest point of bounding box)",
 "author": "Samuel Bernou",
-"version": (1, 1, 2),
+"version": (1, 2, 0),
 "blender": (2, 83, 0),
 "location": "Sidebar > Tool > Ground object",
 "warning": "",
@@ -31,11 +31,6 @@ import bpy
 from mathutils import Vector
 
 
-def to_zero(o):
-    points = [o.matrix_world @ Vector(b) for b in o.bound_box]
-    points.sort(key=lambda x: x[2])
-    o.location.z -= points[0][2]
-
 class MESH_OT_ground_object(bpy.types.Operator):
     """Ground all selected object keepong offset"""
     bl_idname = "object.ground_selected_objects"
@@ -46,15 +41,18 @@ class MESH_OT_ground_object(bpy.types.Operator):
     def poll(cls, context):
         return context.active_object is not None
 
-    # all_to_zero : bpy.props.BoolProperty(
-    #     name="All to zero", description="", default=False)
-
     def execute(self, context):
         settings = context.scene.grd_objs_toolsettings
 
         if not settings.use_active and settings.affect_individually:
             for o in context.selected_objects:
-                to_zero(o)
+                points = [o.matrix_world @ Vector(b) for b in o.bound_box]
+                points.sort(key=lambda x: x[2])
+                z_altitude = points[0][2]
+                if settings.use_3d_cursor:
+                    z_altitude -= context.scene.cursor.location.z
+                o.location.z -= z_altitude
+
             self.report({'INFO'}, f'Grounded {len(context.selected_objects)} objects')
             return {'FINISHED'}
 
@@ -62,18 +60,20 @@ class MESH_OT_ground_object(bpy.types.Operator):
         if settings.use_active:# consider active object Bbox
             points = [context.object.matrix_world @ Vector(b) for b in context.object.bound_box]
 
-        else:# All obj bbox
+        else: # All obj bbox
             for o in context.selected_objects:
                 for b in o.bound_box:
                     points.append(o.matrix_world @ Vector(b))
 
         points.sort(key=lambda x: x[2])
         z_altitude = points[0][2]
+        if settings.use_3d_cursor:
+            z_altitude -= context.scene.cursor.location.z
 
         for o in context.selected_objects:
             o.location.z -= z_altitude
 
-        self.report({'INFO'}, f'Z moved by {z_altitude}')#WARNING, ERROR
+        self.report({'INFO'}, f'Z moved by {z_altitude}')
         return {'FINISHED'}
 
 
@@ -100,7 +100,12 @@ class MESH_OT_center_on_axis(bpy.types.Operator):
         points.sort(key=lambda x: x[axis])
         # all course to zero minus half the distance between min and max (max - min)/2 (equivalent to o.dimensions[axis]/2)
         # o.location[axis] -= points[0][axis] + (points[-1][axis] - points[0][axis])/2
-        o.location[axis] -= points[0][axis] + o.dimensions[axis]/2
+
+        offset = points[0][axis] + o.dimensions[axis]/2
+        if bpy.context.scene.grd_objs_toolsettings.use_3d_cursor:
+            offset -= bpy.context.scene.cursor.location[axis]
+
+        o.location[axis] -= offset
 
     def execute(self, context):
         axis = self.axis
@@ -112,7 +117,7 @@ class MESH_OT_center_on_axis(bpy.types.Operator):
             return {'FINISHED'}
 
         points = []
-        if settings.use_active:# consider active object Bbox
+        if settings.use_active: # consider active object Bbox
             points = [context.object.matrix_world @ Vector(b) for b in context.object.bound_box]
 
         else:# consider all selected object Bbox
@@ -125,6 +130,9 @@ class MESH_OT_center_on_axis(bpy.types.Operator):
         min_axis_dist = points[0][axis]
         max_axis_dist = points[-1][axis]
         offset = min_axis_dist + ((max_axis_dist - min_axis_dist)/2)
+
+        if settings.use_3d_cursor:
+            offset -= context.scene.cursor.location[axis]
 
         for o in context.selected_objects:
             o.location[axis] -= offset
@@ -144,6 +152,7 @@ class MESH_PT_ground_object_UI(bpy.types.Panel):
         # layout.use_property_split = True
 
         ## Options
+        layout.prop(context.scene.grd_objs_toolsettings, 'use_3d_cursor')
         layout.prop(context.scene.grd_objs_toolsettings, 'use_active')
 
         # if not context.scene.grd_objs_toolsettings.use_active:
@@ -154,14 +163,13 @@ class MESH_PT_ground_object_UI(bpy.types.Panel):
 
         ## Ground
         layout.operator("object.ground_selected_objects", text = 'Ground objects')
-        # layout.operator("object.ground_selected_objects", text = 'Ground objects with offset').all_to_zero = False
-        # layout.operator("object.ground_selected_objects", text = 'Ground all to zero', icon='AXIS_TOP').all_to_zero = True
         
         # layout.separator()
         
         ## Center
         ### commented:  layout.prop(context.scene, 'grd_object_center_axis')
         # layout.operator("object.center_on_axis", text = 'Center on Axis').use_active = True
+
         row = layout.row(align=True)
         row.label(text='Center on')
         row.operator("object.center_on_axis", text = 'X').axis = 0
@@ -176,7 +184,10 @@ class GRD_PGT_toolsettings(bpy.types.PropertyGroup) :
         default=False)
 
     use_active : bpy.props.BoolProperty(
-        name="Offset from active", description="Consider only active object to move with all other objects following along\n(incompatible with individual mode)", default=False)
+        name="Offset From Active", description="Consider only active object to move with all other objects following along\n(incompatible with individual mode)", default=False)
+    
+    use_3d_cursor : bpy.props.BoolProperty(
+        name="On 3d Cursor", description="Use 3d cursor as reference (Instead of world center)", default=True)
     
     # bpy.types.Scene.grd_object_center_axis = bpy.props.EnumProperty(
     #     name="Axis", description="Axis to align to", default='Y',
